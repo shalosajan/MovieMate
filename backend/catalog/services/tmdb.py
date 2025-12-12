@@ -7,7 +7,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from django.conf import settings
 from django.utils.text import Truncator
-
+from django.core.cache import cache
 from catalog.models import Content, Season, Episode
 
 logger = logging.getLogger(__name__)
@@ -72,24 +72,35 @@ def _get(path: str, params: Optional[dict] = None) -> dict:
         raise RuntimeError(f"Unexpected error when calling TMDB: {e}") from e
 
 
-def search_tmdb_by_query(query: str, max_results: int = 10) -> List[Dict]:
+def search_tmdb_by_query(query, max_results=10, cache_ttl=3600):
     """
-    Search TMDB multi endpoint and return a small sanitized list of matches.
+    Search TMDB & cache results for `cache_ttl` seconds (default 1 hour).
     """
+    # 1. Check Cache
+    cache_key = f"tmdb_search:{query.lower().strip()}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    # 2. If not in cache, fetch from API
     data = _get("/search/multi", {'query': query})
+
     results = []
     for r in data.get('results', [])[:max_results]:
         if r.get('media_type') not in ('tv', 'movie'):
             continue
-        poster = (TMDB_IMAGE_BASE + r['poster_path']) if r.get('poster_path') else None
         results.append({
             'id': r.get('id'),
             'title': r.get('name') or r.get('title'),
             'media_type': r.get('media_type'),
             'overview': Truncator(r.get('overview') or '').chars(300),
-            'poster_path': poster,
+            'poster_path': (TMDB_IMAGE_BASE + r['poster_path']) if r.get('poster_path') else None,
             'release_date': r.get('first_air_date') or r.get('release_date')
         })
+
+    # 3. Store in Cache
+    cache.set(cache_key, results, cache_ttl)
+
     return results
 
 

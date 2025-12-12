@@ -122,3 +122,11 @@ TMDB_API_KEY = config('TMDB_API_KEY', default='')
 # Useful dev settings
 if DEBUG:
     INTERNAL_IPS = ['127.0.0.1']
+
+# Simple in-memory cache for development
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "moviemate-dev-cache",
+    }
+}
