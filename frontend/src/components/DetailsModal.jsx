@@ -2,10 +2,34 @@
 import React, { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { getMovieDetails, getTVDetails } from "../api/tmdbProxy";
+import { addToWishlist } from "../api/wishlist";
+import { useNavigate } from "react-router-dom";
 
 export default function DetailsModal({ item, open, onClose }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // --- Start of New Code ---
+  const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem("access_token");
+
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      await addToWishlist({
+        ...details,
+        media_type: item.media_type,
+      });
+      alert("Added to wishlist ❤️");
+    } catch {
+      alert("Already in wishlist");
+    }
+  };
+  // --- End of New Code ---
 
   useEffect(() => {
     if (!open || !item) return;
@@ -57,6 +81,15 @@ export default function DetailsModal({ item, open, onClose }) {
               {details.title || details.name}
             </h2>
 
+            {/* --- Start of Button Code Insertion Point --- */}
+            <button
+              onClick={handleWishlist}
+              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
+            >
+              ❤️ Add to Wishlist
+            </button>
+            {/* --- End of Button Code Insertion Point --- */}
+
             <p className="text-sm text-gray-400 mb-2">
               ⭐ {details.vote_average?.toFixed(1)}
             </p>
@@ -70,5 +103,3 @@ export default function DetailsModal({ item, open, onClose }) {
     </Modal>
   );
 }
-
-

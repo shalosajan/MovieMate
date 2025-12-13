@@ -159,3 +159,24 @@ class Episode(models.Model):
         # propagate to parent content
         self.season.content.update_status_if_needed()
         return self.watched
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wishlist"
+    )
+
+    tmdb_id = models.IntegerField()
+    media_type = models.CharField(max_length=10)  # movie | tv
+    title = models.CharField(max_length=255)
+    poster_path = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "tmdb_id", "media_type")
+
+    def __str__(self):
+        return f"{self.user} → {self.title}"

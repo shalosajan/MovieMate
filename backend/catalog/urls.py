@@ -1,6 +1,7 @@
 # backend/catalog/urls.py
 from django.urls import path
 from rest_framework.routers import DefaultRouter
+from catalog import views_wishlist
 
 from .views import ContentViewSet
 from catalog import views_tmdb
@@ -22,4 +23,9 @@ urlpatterns += [
     path("tmdb/now-playing/", views_tmdb.now_playing_movies),
     path("tmdb/genres/movies/", views_tmdb.movie_genres),
     path("tmdb/genres/tv/", views_tmdb.tv_genres),
+    path("tmdb/movie/<int:movie_id>/", views_tmdb.movie_details),
+    path("tmdb/tv/<int:tv_id>/", views_tmdb.tv_details),
+    path("wishlist/", views_wishlist.wishlist_list),
+    path("wishlist/add/", views_wishlist.wishlist_add),
+    path("wishlist/remove/<int:tmdb_id>/", views_wishlist.wishlist_remove),
 ]

@@ -3,6 +3,12 @@ from django.conf import settings
 
 TMDB_BASE = "https://api.themoviedb.org/3"
 
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": "MovieMate/1.0 (contact: dev@example.com)",
+    "Accept": "application/json",
+})
+
 
 def tmdb_get(path, params=None):
     params = params or {}
@@ -10,9 +16,15 @@ def tmdb_get(path, params=None):
     params["language"] = "en-US"
 
     url = f"{TMDB_BASE}{path}"
-    response = requests.get(url, params=params, timeout=10)
-    response.raise_for_status()
-    return response.json()
+
+    try:
+        response = SESSION.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        # Log clean error and fail gracefully
+        raise RuntimeError(f"TMDB request failed: {e}")
+
 
 
 # -------- Public (read-only) helpers --------
