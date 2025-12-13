@@ -4,10 +4,21 @@ import api from "../api/axios";
 import { getTrendingMovies } from "../api/tmdbProxy";
 import Carousel from "../components/Carousel";
 import ContentCard from "../components/ContentCard";
+import {
+  getPopularMovies,
+  getTopRatedMovies,
+  getTrendingTV,
+  getNowPlayingMovies
+} from "../api/tmdbProxy";
 
 export default function Home() {
   const [collection, setCollection] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [trendingTV, setTrendingTV] = useState([]);
+  const [nowPlaying, setNowPlaying] = useState([]);
+
   const [query, setQuery] = useState("");
 
   const navigate = useNavigate();
@@ -15,9 +26,11 @@ export default function Home() {
 
   // 🔓 Public TMDB proxy data
   useEffect(() => {
-    getTrendingMovies().then((data) => {
-      setTrendingMovies(data.results);
-    });
+    getTrendingMovies().then(d => setTrendingMovies(d.results));
+    getPopularMovies().then(d => setPopularMovies(d.results));
+    getTopRatedMovies().then(d => setTopRatedMovies(d.results));
+    getTrendingTV().then(d => setTrendingTV(d.results));
+    getNowPlayingMovies().then(d => setNowPlaying(d.results));
   }, []);
 
   // 🔐 User collection
@@ -54,6 +67,13 @@ export default function Home() {
         title="🔥 Trending Movies"
         items={trendingMovies}
       />
+    <Carousel title="🎥 Popular Movies" items={popularMovies} />
+
+    <Carousel title="⭐ Top Rated Movies" items={topRatedMovies} />
+
+    <Carousel title="📺 Trending TV Shows" items={trendingTV} />
+
+    <Carousel title="🆕 Latest Releases" items={nowPlaying} />
 
       {/* PRIVATE */}
       {isAuthenticated && (
