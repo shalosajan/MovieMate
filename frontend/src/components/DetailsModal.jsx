@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import { getMovieDetails, getTVDetails } from "../api/tmdbProxy";
 import { addToWishlist } from "../api/wishlist";
 import { useNavigate } from "react-router-dom";
+import { importFromTMDB } from "../api/catalog";
 
 
 
@@ -90,14 +91,25 @@ export default function DetailsModal({ item, open, onClose }) {
               ❤️ Add to Wishlist
             </button>
            
-            <button
-              onClick={() =>
-                 navigate(`/watch/${item.media_type}/${item.id}`)
-                      }
-                className="mt-4 px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700"
-               >
-                  Watch Now
-                 </button>
+<button
+  onClick={async () => {
+    try {
+      // 🔥 AUTO IMPORT
+      await importFromTMDB(item.id);
+
+      // ➜ Go to watch page
+      navigate(`/watch/${item.media_type}/${item.id}`);
+      onClose();
+    } catch (err) {
+      console.error("Import failed", err);
+      alert("Failed to import title");
+    }
+  }}
+  className="mt-4 px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-700"
+>
+  Watch Now
+</button>
+
 
             <p className="text-sm text-gray-400 mb-2">
               ⭐ {details.vote_average?.toFixed(1)}

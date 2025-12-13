@@ -28,12 +28,7 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
-              <Link
-                to="/search"
-                className="text-gray-300 hover:text-white"
-              >
-                Search & Import
-              </Link>
+
             <Link to="/dashboard"
             className="text-gray-300 hover:text-white"
             >Dashboard</Link>

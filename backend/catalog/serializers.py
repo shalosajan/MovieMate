@@ -18,25 +18,47 @@ class SeasonSerializer(serializers.ModelSerializer):
 
 
 class ContentSerializer(serializers.ModelSerializer):
-    seasons = SeasonSerializer(many=True, read_only=True)
+    content_id = serializers.IntegerField(source="id", read_only=True)
     owner = serializers.ReadOnlyField(source='owner.username')
+    seasons = SeasonSerializer(many=True, read_only=True)
     progress_percent = serializers.SerializerMethodField()
 
     class Meta:
         model = Content
         fields = [
-            'id', 'owner', 'tmdb_id', 'title', 'type', 'poster_path', 'overview',
-            'platform', 'status', 'rating', 'review', 'seasons', 'progress_percent',
-            'created_at', 'updated_at'
+            'id',
+            'content_id',
+            'owner',
+            'tmdb_id',
+            'title',
+            'type',
+            'poster_path',
+            'overview',
+            'platform',
+            'status',
+            'rating',
+            'review',
+            'seasons',
+            'progress_percent',
+            'created_at',
+            'updated_at',
         ]
-        read_only_fields = ['owner', 'seasons', 'progress_percent', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id',
+            'content_id',
+            'owner',
+            'seasons',
+            'progress_percent',
+            'created_at',
+            'updated_at',
+        ]
 
     def get_progress_percent(self, obj):
         try:
             return obj.progress_percent()
         except Exception:
             return None
-        
+
 class WishlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wishlist

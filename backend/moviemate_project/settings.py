@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
 SECRET_KEY = config('SECRET_KEY', default='unsafe-secret-for-dev')
-DEBUG = config('DEBUG', default='False') == 'True'
+DEBUG = config('DEBUG', default='False') == 'False'
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=Csv())
 
 # Apps
@@ -92,10 +92,24 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default='False') == 'True'
-# or read a specific list via CORS_ALLOWED_ORIGINS env
+# -------------------------------------
+# CORS SETTINGS
+# -------------------------------------
 
+# Development: allow all
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default='True') == 'True'
+
+# Production: comma-separated list
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv(), default=[])
+
+# Allow cookies / JWT over HTTPS (future use)
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF protection for non-simple requests
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(), default=[
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+])
 # REST Framework + JWT
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

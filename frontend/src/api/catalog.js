@@ -23,3 +23,14 @@ export const toggleEpisode = (contentId, seasonNumber, episodeNumber) =>
     season_number: seasonNumber,
     episode_number: episodeNumber,
   });
+
+export const getContentByTMDB = (tmdbId) =>
+  api
+    .get(`/catalog/contents/?tmdb_id=${tmdbId}`)
+    .then(res => res.data.results?.[0]);
+
+export const importFromTMDB = (tmdbId) =>
+  api.post("/catalog/contents/import_tmdb/", {
+    tmdb_id: tmdbId,
+  }).then(res => res.data);
+

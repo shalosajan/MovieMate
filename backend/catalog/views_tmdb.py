@@ -83,3 +83,11 @@ def movie_details(request, movie_id):
 @permission_classes([AllowAny])
 def tv_details(request, tv_id):
     return safe_tmdb_response(tmdb_proxy.tv_details, tv_id)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def search_tmdb(request):
+    q = request.query_params.get("q")
+    if not q:
+        return Response({"results": []})
+    return Response(tmdb_proxy.search_multi(q))

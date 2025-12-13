@@ -1,51 +1,107 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+
+import { getMovieDetails, getTVDetails } from "../api/tmdbProxy";
 import {
-  getMovieDetails,
-  getTVDetails,
-} from "../api/tmdbProxy";
-import { markMovieWatched, markSeasonWatched } from "../api/catalog";
+  getContentByTMDB,
+  importFromTMDB,
+  markMovieWatched,
+  getContentSeasons,
+  markSeasonWatched,
+  toggleEpisode,
+} from "../api/catalog";
 
 export default function Watch() {
-  const { type, id } = useParams();
+  const { type, id: tmdbId } = useParams();
+
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // backend content
+  const [contentId, setContentId] = useState(null);
+
+  // movie
   const [movieStatus, setMovieStatus] = useState("unwatched");
-  const [watchedSeasons, setWatchedSeasons] = useState([]);
+
+  // tv
   const [backendSeasons, setBackendSeasons] = useState([]);
+  const [watchedSeasons, setWatchedSeasons] = useState([]);
+  const [watchedEpisodes, setWatchedEpisodes] = useState([]);
+
+  /* ================= LOAD TMDB DETAILS ================= */
 
   useEffect(() => {
-    const load = async () => {
+    const loadTMDB = async () => {
       try {
         const data =
           type === "tv"
-            ? await getTVDetails(id)
-            : await getMovieDetails(id);
+            ? await getTVDetails(tmdbId)
+            : await getMovieDetails(tmdbId);
         setDetails(data);
       } catch (e) {
-        console.error("Failed to load content", e);
+        console.error("Failed to load TMDB content", e);
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, [type, id]);
+    loadTMDB();
+  }, [type, tmdbId]);
+
+  /* ================= ENSURE BACKEND CONTENT ================= */
 
   useEffect(() => {
-  if (type === "movie") {
-    setMovieStatus("unwatched"); // reset when navigating
-  }
-}, [type, id]);
+    if (!details) return;
 
-useEffect(() => {
-  if (type !== "tv") return;
+    const ensureContent = async () => {
+      try {
+        // 1️⃣ try fetching
+        let content = await getContentByTMDB(tmdbId);
 
-  getContentSeasons(id)
-    .then(setBackendSeasons)
-    .catch(() => {});
-}, [type, id]);
+        // 2️⃣ auto-import if missing
+        if (!content) {
+          if (!contentId) {
+          await importFromTMDB(tmdbId);
+           }
+          content = await getContentByTMDB(tmdbId);
+        }
 
-  if (loading) {
+        setContentId(content.id);
+
+        if (content.status === "completed") {
+          setMovieStatus("completed");
+        }
+      } catch (err) {
+        console.error("Failed to sync backend content", err);
+      }
+    };
+
+    ensureContent();
+  }, [details, tmdbId]);
+
+  /* ================= LOAD BACKEND SEASONS ================= */
+
+  useEffect(() => {
+    if (!contentId || type !== "tv") return;
+
+    getContentSeasons(contentId)
+      .then((data) => {
+        setBackendSeasons(data);
+        setWatchedSeasons(
+          data
+            .filter(
+              s =>
+                s.episodes?.length &&
+                s.episodes.every(e => e.watched)
+            )
+            .map(s => s.season_number)
+        );
+      })
+      .catch(() => {});
+  }, [contentId, type]);
+
+  /* ================= STATES ================= */
+
+  if (loading || !details) {
     return (
       <div className="p-10 text-center text-gray-400">
         Loading content...
@@ -53,13 +109,7 @@ useEffect(() => {
     );
   }
 
-  if (!details) {
-    return (
-      <div className="p-10 text-center text-red-400">
-        Content not found
-      </div>
-    );
-  }
+  /* ===================================================== */
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -74,7 +124,7 @@ useEffect(() => {
           alt={details.title || details.name}
         />
 
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold mb-3">
             {details.title || details.name}
           </h1>
@@ -86,81 +136,129 @@ useEffect(() => {
           <p className="text-gray-300 mb-6">
             {details.overview}
           </p>
- {type === "movie" && (
-  <button
-onClick={async () => {
-  setMovieStatus("completed"); // 👈 immediate UI change
-  try {
-    await markMovieWatched(details.id);
-  } catch {
-    setMovieStatus("unwatched"); // rollback on failure
-  }
-}}
-    disabled={movieStatus === "completed"}
-    className={`mt-4 px-4 py-2 rounded ${
-      movieStatus === "completed"
-        ? "bg-green-600 cursor-default"
-        : "bg-indigo-600 hover:bg-indigo-700"
-    }`}
-  >
-    {movieStatus === "completed" ? "Watched ✓" : "Mark as watched"}
-  </button>
-)}
 
+          {/* ================= MOVIE ================= */}
 
-{type === "tv" && (
-  <div className="mt-6">
-    <h3 className="text-lg font-semibold mb-3">Seasons</h3>
+          {type === "movie" && contentId && (
+            <button
+              onClick={async () => {
+                setMovieStatus("completed");
+                try {
+                  await markMovieWatched(contentId);
+                } catch {
+                  setMovieStatus("unwatched");
+                }
+              }}
+              className={`px-4 py-2 rounded ${
+                movieStatus === "completed"
+                  ? "bg-green-600"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
+            >
+              {movieStatus === "completed"
+                ? "Watched ✓"
+                : "Mark as watched"}
+            </button>
+          )}
 
-    {details.seasons
-      ?.filter(s => s.season_number !== 0) // 🚫 ignore specials
-      .map((tmdbSeason) => {
-        const backendSeason = backendSeasons.find(
-          s => s.season_number === tmdbSeason.season_number
-        );
+          {/* ================= TV ================= */}
 
-        if (!backendSeason) return null;
+          {type === "tv" && contentId && (
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold mb-4">
+                Seasons
+              </h3>
 
-        const watched = watchedSeasons.includes(backendSeason.id);
+              {details.seasons
+                ?.filter(s => s.season_number !== 0)
+                .map((season) => {
+                  const isSeasonWatched =
+                    watchedSeasons.includes(season.season_number);
 
-        return (
-          <div
-            key={tmdbSeason.season_number}
-            className="border border-gray-700 rounded p-3 mb-3"
-          >
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">
-                Season {tmdbSeason.season_number}
-              </h4>
+                  return (
+                    <div
+                      key={season.season_number}
+                      className="border border-gray-700 rounded p-4 mb-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium">
+                          Season {season.season_number}
+                        </h4>
 
-              <button
-                onClick={async () => {
-                  await markSeasonWatched(backendSeason.id);
-                  setWatchedSeasons(prev => [...prev, backendSeason.id]);
-                }}
-                className={`text-sm px-3 py-1 rounded ${
-                  watched
-                    ? "bg-green-600"
-                    : "bg-indigo-600 hover:bg-indigo-700"
-                }`}
-              >
-                {watched ? "Watched ✓" : "Mark season watched"}
-              </button>
+                        <button
+                          onClick={async () => {
+                            setWatchedSeasons(prev => [
+                              ...prev,
+                              season.season_number,
+                            ]);
+                            try {
+                              await markSeasonWatched(
+                                contentId,
+                                season.season_number
+                              );
+                            } catch {
+                              setWatchedSeasons(prev =>
+                                prev.filter(
+                                  n => n !== season.season_number
+                                )
+                              );
+                            }
+                          }}
+                          className={`text-sm px-3 py-1 rounded ${
+                            isSeasonWatched
+                              ? "bg-green-600"
+                              : "bg-indigo-600 hover:bg-indigo-700"
+                          }`}
+                        >
+                          {isSeasonWatched
+                            ? "Watched ✓"
+                            : "Mark season watched"}
+                        </button>
+                      </div>
+
+                      {season.episode_count && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {Array.from(
+                            { length: season.episode_count },
+                            (_, i) => i + 1
+                          ).map((epNum) => {
+                            const key = `${season.season_number}-${epNum}`;
+                            const watched = watchedEpisodes.includes(key);
+
+                            return (
+                              <button
+                                key={epNum}
+                                onClick={async () => {
+                                  setWatchedEpisodes(prev => [...prev, key]);
+                                  try {
+                                    await toggleEpisode(
+                                      contentId,
+                                      season.season_number,
+                                      epNum
+                                    );
+                                  } catch {
+                                    setWatchedEpisodes(prev =>
+                                      prev.filter(k => k !== key)
+                                    );
+                                  }
+                                }}
+                                className={`text-xs px-2 py-1 rounded ${
+                                  watched
+                                    ? "bg-green-700"
+                                    : "bg-gray-700 hover:bg-gray-600"
+                                }`}
+                              >
+                                Ep {epNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
-          </div>
-        );
-      })}
-  </div>
-)}
-
-
-
-          {/* Placeholder for Phase 2 */}
-          <div className="border-t border-gray-700 pt-4">
-            <p className="text-sm text-gray-500">
-              Progress tracking coming next
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>
