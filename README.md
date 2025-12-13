@@ -1,250 +1,224 @@
-🟦 Backend — MovieMate (Django + DRF)
+🎬 MovieMate — Movie & TV Show Tracker
 
-The MovieMate backend provides APIs for managing a personal movie & TV show collection, including TMDB-powered imports, progress tracking for shows, and user authentication using JWT.
+MovieMate is a full-stack web application that allows users to discover, track, and manage movies and TV shows, powered by the TMDB API.
+Users can search content, maintain a personal collection, manage a wishlist, and track watch progress for movies and TV shows.
 
-⚙️ Tech Stack
+🌐 Live Deployment
+Frontend
 
-Backend Framework: Django 5 + Django REST Framework
+🔗 Vercel
+https://movie-mate-six-sigma.vercel.app/
 
-Auth: JWT (SimpleJWT)
+Backend API
 
-Database: SQLite (dev) / PostgreSQL (prod-ready)
+🔗 Railway
+https://moviemate-production-a7fe.up.railway.app/
 
-External API: TMDB (search, movie/TV metadata)
+⚠️ Note: The frontend and backend are successfully deployed and connected.
+Some authentication-related features work correctly in local development but show issues in production (details below).
 
-Environment Management: python-decouple
+🛠️ Tech Stack
+Frontend
 
-Testing: Django TestCase + unittest.mock
+React.js (Vite)
 
-🚀 Setup Instructions
-1️⃣ Clone the repository
-git clone https://github.com/shalosajan/MovieMate
-cd MovieMate/backend
+React Router
 
-2️⃣ Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
+Tailwind CSS
 
-3️⃣ Install dependencies
+Axios
+
+JWT-based authentication
+
+Backend
+
+Django
+
+Django REST Framework
+
+Simple JWT
+
+PostgreSQL / SQLite (env-based)
+
+TMDB API (via backend proxy)
+
+Railway deployment
+
+✨ Features Implemented
+Core Features
+
+User authentication (register, login, JWT)
+
+TMDB integration (movies & TV shows)
+
+Search and discovery
+
+Wishlist management
+
+Personal content collection
+
+Watch page for movies & TV shows
+
+Season and episode metadata handling
+
+Backend-driven content ownership
+
+RESTful API architecture
+
+Watch Tracking (Partial)
+
+Mark movies as watched
+
+Season-level progress tracking
+
+Episode toggle logic implemented (backend + frontend)
+
+Progress persistence in database (models in place)
+
+🔐 Authentication Flow
+
+JWT authentication using SimpleJWT
+
+Tokens stored on the client
+
+Protected backend routes
+
+Backend enforces ownership on content actions
+
+⚠️ Known Issues (Important)
+1. Authentication in Production
+
+Registration and login work correctly in localhost
+
+In production (Vercel + Railway), authentication requests sometimes fail
+
+Likely causes:
+
+CORS / CSRF trusted origins mismatch
+
+Cookie/JWT handling differences between local and deployed environments
+
+Environment variable differences (Railway vs local .env)
+
+This issue is environment-specific, not a logic error
+
+2. TMDB API Stability
+
+TMDB API occasionally returned:
+
+503 Service Unavailable
+
+Connection reset errors
+
+This affected:
+
+Importing content
+
+Search reliability during certain sessions
+
+Backend retry and error-handling logic has been implemented to mitigate this
+
+3. Watch Progress Finalization
+
+Core logic exists for:
+
+Movies
+
+Seasons
+
+Episodes
+
+UI/UX refinement and final edge-case handling are still pending
+
+📁 Project Structure (Simplified)
+MovieMate/
+├── backend/
+│   ├── accounts/
+│   ├── catalog/
+│   │   ├── models.py
+│   │   ├── views.py
+│   │   ├── services/
+│   │   │   └── tmdb.py
+│   ├── moviemate_project/
+│   └── manage.py
+│
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── context/
+│   └── vite.config.js
+
+⚙️ Local Setup
+Backend
+cd backend
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-4️⃣ Create your .env file
-
-Copy the example env file:
-
-cp .env.example .env
-
-
-Then open .env and add your TMDB API key:
-
-SECRET_KEY=your_django_secret
-DEBUG=True
-TMDB_API_KEY=your_tmdb_key_here
-
-
-⚠️ .env is ignored by Git to prevent leaking secrets.
-
-5️⃣ Apply migrations
-python manage.py makemigrations
 python manage.py migrate
-
-6️⃣ Create an admin user (optional)
-python manage.py createsuperuser
-
-7️⃣ Run the server
 python manage.py runserver
 
+Frontend
+cd frontend
+npm install
+npm run dev
 
-Backend will start at:
-👉 http://127.0.0.1:8000
+🔑 Environment Variables
+Backend (.env)
+SECRET_KEY=your-secret
+DEBUG=True
+DATABASE_URL=sqlite:///db.sqlite3
+TMDB_API_KEY=your_tmdb_api_key
+ALLOWED_HOSTS=127.0.0.1,localhost
+CORS_ALLOW_ALL_ORIGINS=True
 
-🔐 Authentication
+Frontend (.env)
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
 
-JWT authentication is used for all API calls.
+📌 Deployment Notes
 
-Obtain tokens
-POST /api/accounts/token/
-{
-  "username": "john",
-  "password": "password"
-}
+Backend deployed on Railway
 
+Frontend deployed on Vercel
 
-Response:
+Production uses environment-based configuration
 
-{
-  "access": "...",
-  "refresh": "..."
-}
+Static file handling and CORS configured for cross-origin requests
 
+Some production auth issues remain under investigation
 
-Send the access token with every request:
+🚀 Future Improvements
 
-Authorization: Bearer <access_token>
+Finalize watch progress UI
 
-Register
-POST /api/accounts/register/
+Fix production authentication edge cases
 
-Current user profile
-GET /api/accounts/me/
-PATCH /api/accounts/me/
+Add ratings & reviews
 
-🎬 TMDB Integration
+Add analytics (watch time graphs)
 
-MovieMate can import movies or TV shows via TMDB using:
+AI-based recommendations
 
-Import by query
-POST /api/catalog/contents/import_tmdb/
-{
-  "query": "Breaking Bad"
-}
+Improve deployment stability
 
-Import by TMDB ID
-POST /api/catalog/contents/import_tmdb/
-{
-  "tmdb_id": 1396
-}
+👤 Author
 
-Search TMDB (without creating items)
-GET /api/catalog/contents/tmdb_search/?q=Batman
+Shalo Sajan
+GitHub: https://github.com/shalosajan
 
-📚 Catalog API
-List user content
-GET /api/catalog/contents/
+📝 Final Note
 
-Create content manually
-POST /api/catalog/contents/
+This project demonstrates:
 
-Retrieve / update / delete content
-GET /api/catalog/contents/{id}/
-PATCH /api/catalog/contents/{id}/
-DELETE /api/catalog/contents/{id}/
+Full-stack architecture
 
-📺 TV Show Progress Tracking
-Toggle an episode watched/unwatched
-POST /api/catalog/contents/{id}/toggle_episode/
-{
-  "season_number": 1,
-  "episode_number": 3
-}
+External API integration
 
+Authentication and authorization
 
-This automatically:
+State management
 
-Creates the season/episode if missing
+Real-world deployment challenges
 
-Toggles its watched flag
-
-Updates content status (watching, completed) intelligently
-
-Mark an entire season as watched
-POST /api/catalog/contents/{id}/mark_season_watched/
-{
-  "season_number": 2
-}
-
-
-If TMDB provided episode counts, missing episodes are auto-created.
-
-⭐ Features Implemented
-User Management
-
-Register
-
-Login (JWT)
-
-Profile view/update
-
-Content Management
-
-Add movies & TV shows
-
-Import from TMDB (search or ID)
-
-Season & episode structure auto-generated for TV shows
-
-Progress Tracking
-
-Toggle episode watched state
-
-Mark entire season watched
-
-Auto-update status (wishlist → watching → completed)
-
-Progress % calculation
-
-Filtering
-
-Filtering is done on the frontend using data returned from:
-
-status
-
-type
-
-platform
-
-rating
-
-Cleansed Architecture
-
-accounts app → auth logic
-
-catalog app → content, seasons, episodes
-
-services/tmdb.py → external API integration
-
-serializers.py → structured nested responses
-
-tests/ → mocked tests for TMDB import
-
-🧪 Running Tests
-
-Tests use mocking so they run without calling TMDB.
-
-python manage.py test
-
-
-Included tests:
-
-TMDB import (TV + movie)
-
-Season creation metadata
-
-Episode creation and watched toggle logic
-
-📁 API Folder Structure (backend)
-backend/
-│
-├── accounts/           # Auth (JWT), register, profile
-│   ├── serializers.py
-│   ├── views.py
-│   └── urls.py
-│
-├── catalog/            # Movies, TV shows, seasons, episodes
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── services/
-│   │    └── tmdb.py    # TMDB import logic
-│   ├── urls.py
-│   └── tests/
-│        └── test_tmdb_service.py
-│
-├── moviemate_project/
-│   ├── settings.py
-│   └── urls.py
-│
-└── requirements.txt
-
-💬 Notes for Reviewers
-
-TMDB calls are wrapped with retries and custom headers.
-
-Episodes are created lazily for efficiency.
-
-Season metadata (episode_count) stored from TMDB when available.
-
-Strong validation and owner-based query sets ensure data integrity.
-
-All API endpoints require authentication.
+Despite time constraints and third-party API instability, the core system is complete, functional, and extensible.
