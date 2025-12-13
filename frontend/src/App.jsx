@@ -8,6 +8,8 @@ import Register from './pages/Register.jsx'
 import Navbar from './components/Navbar.jsx'
 import Dashboard from "./pages/Dashboard";
 import Wishlist from "./pages/Wishlist";
+import Watch from "./pages/Watch.jsx";
+
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('access_token')
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
+          <Route path="/watch/:type/:id" element={<Watch />} />
+
 
         </Routes>
       </div>
