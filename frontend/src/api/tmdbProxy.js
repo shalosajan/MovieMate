@@ -6,29 +6,49 @@ import api from "./axios";
   No auth header required.
 */
 
+const safeGet = async (url) => {
+  try {
+    const res = await api.get(url);
+    return res.data;
+  } catch (err) {
+    console.warn(
+      "TMDB proxy unavailable:",
+      url,
+      err.response?.status
+    );
+    return null; // graceful fallback
+  }
+};
+
 export const getTrendingMovies = () =>
-  api.get("/catalog/tmdb/trending/movies/").then(res => res.data);
+  safeGet("/catalog/tmdb/trending/movies/");
 
 export const getTrendingTV = () =>
-  api.get("/catalog/tmdb/trending/tv/").then(res => res.data);
+  safeGet("/catalog/tmdb/trending/tv/");
 
 export const getPopularMovies = () =>
-  api.get("/catalog/tmdb/popular/movies/").then(res => res.data);
+  safeGet("/catalog/tmdb/popular/movies/");
 
 export const getPopularTV = () =>
-  api.get("/catalog/tmdb/popular/tv/").then(res => res.data);
+  safeGet("/catalog/tmdb/popular/tv/");
 
 export const getTopRatedMovies = () =>
-  api.get("/catalog/tmdb/top-rated/movies/").then(res => res.data);
+  safeGet("/catalog/tmdb/top-rated/movies/");
 
 export const getTopRatedTV = () =>
-  api.get("/catalog/tmdb/top-rated/tv/").then(res => res.data);
+  safeGet("/catalog/tmdb/top-rated/tv/");
 
 export const getNowPlayingMovies = () =>
-  api.get("/catalog/tmdb/now-playing/").then(res => res.data);
+  safeGet("/catalog/tmdb/now-playing/");
 
 export const getMovieGenres = () =>
-  api.get("/catalog/tmdb/genres/movies/").then(res => res.data);
+  safeGet("/catalog/tmdb/genres/movies/");
 
 export const getTVGenres = () =>
-  api.get("/catalog/tmdb/genres/tv/").then(res => res.data);
+  safeGet("/catalog/tmdb/genres/tv/");
+
+export const getMovieDetails = (id) =>
+  safeGet(`/catalog/tmdb/movie/${id}/`);
+
+export const getTVDetails = (id) =>
+  safeGet(`/catalog/tmdb/tv/${id}/`);
