@@ -52,3 +52,8 @@ export const getMovieDetails = (id) =>
 
 export const getTVDetails = (id) =>
   safeGet(`/catalog/tmdb/tv/${id}/`);
+
+export const searchTMDB = (query) =>
+  api
+    .get(`/catalog/tmdb/search/?q=${encodeURIComponent(query)}`)
+    .then(res => res.data);

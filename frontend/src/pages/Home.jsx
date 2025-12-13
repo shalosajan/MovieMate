@@ -5,6 +5,8 @@ import api from "../api/axios";
 import { getTrendingMovies } from "../api/tmdbProxy";
 import Carousel from "../components/Carousel";
 import ContentCard from "../components/ContentCard";
+import { searchTMDB } from "../api/tmdbProxy";
+
 import {
   getPopularMovies,
   getTopRatedMovies,
@@ -22,6 +24,8 @@ export default function Home() {
   const [trendingTV, setTrendingTV] = useState([]);
   const [nowPlaying, setNowPlaying] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   const [query, setQuery] = useState("");
 
@@ -56,15 +60,54 @@ useEffect(() => {
           Track Movies & TV Shows
         </h1>
 
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") navigate(`/search?q=${query}`);
-          }}
-          placeholder="Search movies or TV shows..."
-          className="w-full max-w-xl px-4 py-3 rounded bg-gray-800 text-white outline-none"
+<input
+  value={query}
+  onChange={(e) => setQuery(e.target.value)}
+  onKeyDown={async (e) => {
+    if (e.key === "Enter" && query.trim()) {
+      setSearching(true);
+      const data = await searchTMDB(query);
+      setSearchResults(data.results || []);
+      setSearching(false);
+    }
+  }}
+  placeholder="Search movies or TV shows..."
+  className="w-full max-w-xl px-4 py-3 rounded bg-gray-800 text-white outline-none"
+/>
+{searching && (
+  <p className="text-gray-400 text-center mt-6">
+    Searching...
+  </p>
+)}
+
+{searchResults.length > 0 && (
+  <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6">
+    {searchResults.map(item => (
+      <div
+        key={item.id}
+        onClick={() => setSelectedItem(item)}
+        className="cursor-pointer"
+      >
+        <img
+          src={
+            item.poster_path
+              ? `https://image.tmdb.org/t/p/w300${item.poster_path}`
+              : ""
+          }
+          className="rounded mb-2"
         />
+        <h3 className="text-sm font-semibold">
+          {item.title || item.name}
+        </h3>
+        <p className="text-xs text-gray-400">
+          ⭐ {item.vote_average?.toFixed(1)}
+        </p>
+      </div>
+    ))}
+  </div>
+)}
+
+
       </div>
 
       {/* PUBLIC */}
