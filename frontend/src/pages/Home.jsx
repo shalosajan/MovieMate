@@ -1,56 +1,74 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import api from '../api/axios'
-import ContentCard from '../components/ContentCard'
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { getTrendingMovies } from "../api/tmdbProxy";
+import Carousel from "../components/Carousel";
+import ContentCard from "../components/ContentCard";
 
 export default function Home() {
-  const [items, setItems] = useState([])
-  const isAuthenticated = !!localStorage.getItem("access_token")
+  const [collection, setCollection] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [query, setQuery] = useState("");
 
+  const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem("access_token");
+
+  // 🔓 Public TMDB proxy data
   useEffect(() => {
-    // Only fetch user collection if logged in
-    if (!isAuthenticated) return
+    getTrendingMovies().then((data) => {
+      setTrendingMovies(data.results);
+    });
+  }, []);
 
-    (async () => {
-      try {
-        const res = await api.get('/catalog/contents/')
-        setItems(res.data.results || res.data)
-      } catch (e) {
-        console.warn("User not authenticated or error loading collection")
-      }
-    })()
-  }, [isAuthenticated])
+  // 🔐 User collection
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    api.get("/catalog/contents/")
+      .then(res => setCollection(res.data.results || res.data))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          {isAuthenticated ? "My Collection" : "Welcome to MovieMate"}
+    <div className="px-6 py-6 max-w-7xl mx-auto">
+
+      {/* HERO */}
+      <div className="mb-10 text-center">
+        <h1 className="text-4xl font-bold mb-4">
+          Track Movies & TV Shows
         </h1>
 
-        {isAuthenticated && (
-          <Link
-            to="/search"
-            className="py-1 px-3 bg-blue-600 text-white rounded"
-          >
-            Search & Import
-          </Link>
-        )}
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") navigate(`/search?q=${query}`);
+          }}
+          placeholder="Search movies or TV shows..."
+          className="w-full max-w-xl px-4 py-3 rounded bg-gray-800 text-white outline-none"
+        />
       </div>
 
-      {!isAuthenticated && (
-        <p className="text-gray-400 mt-2">
-          Discover movies & TV shows. Sign in to track your watchlist.
-        </p>
-      )}
+      {/* PUBLIC */}
+      <Carousel
+        title="🔥 Trending Movies"
+        items={trendingMovies}
+      />
 
+      {/* PRIVATE */}
       {isAuthenticated && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {items.map(it => (
-            <ContentCard key={it.id} item={it} />
-          ))}
-        </div>
+        <>
+          <h2 className="text-xl font-bold mt-10 mb-4">
+            My Collection
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {collection.map(it => (
+              <ContentCard key={it.id} item={it} />
+            ))}
+          </div>
+        </>
       )}
     </div>
-  )
+  );
 }
