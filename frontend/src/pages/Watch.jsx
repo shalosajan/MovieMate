@@ -12,6 +12,7 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [movieStatus, setMovieStatus] = useState("unwatched");
   const [watchedSeasons, setWatchedSeasons] = useState([]);
+  const [backendSeasons, setBackendSeasons] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +35,14 @@ export default function Watch() {
   if (type === "movie") {
     setMovieStatus("unwatched"); // reset when navigating
   }
+}, [type, id]);
+
+useEffect(() => {
+  if (type !== "tv") return;
+
+  getContentSeasons(id)
+    .then(setBackendSeasons)
+    .catch(() => {});
 }, [type, id]);
 
   if (loading) {
@@ -79,10 +88,14 @@ export default function Watch() {
           </p>
  {type === "movie" && (
   <button
-    onClick={async () => {
-      await markMovieWatched(details.id);
-      setMovieStatus("completed");
-    }}
+onClick={async () => {
+  setMovieStatus("completed"); // 👈 immediate UI change
+  try {
+    await markMovieWatched(details.id);
+  } catch {
+    setMovieStatus("unwatched"); // rollback on failure
+  }
+}}
     disabled={movieStatus === "completed"}
     className={`mt-4 px-4 py-2 rounded ${
       movieStatus === "completed"
@@ -99,37 +112,47 @@ export default function Watch() {
   <div className="mt-6">
     <h3 className="text-lg font-semibold mb-3">Seasons</h3>
 
-    {details.seasons?.map((season) => (
-      <div
-        key={season.id}
-        className="border border-gray-700 rounded p-3 mb-3"
-      >
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium">
-            Season {season.season_number}
-          </h4>
+    {details.seasons
+      ?.filter(s => s.season_number !== 0) // 🚫 ignore specials
+      .map((tmdbSeason) => {
+        const backendSeason = backendSeasons.find(
+          s => s.season_number === tmdbSeason.season_number
+        );
 
-<button
-  onClick={async () => {
-    await markSeasonWatched(season.id);
-    setWatchedSeasons(prev => [...prev, season.season_number]);
-  }}
-  className={`text-sm px-3 py-1 rounded ${
-    watchedSeasons.includes(season.season_number)
-      ? "bg-green-600"
-      : "bg-indigo-600 hover:bg-indigo-700"
-  }`}
->
-  {watchedSeasons.includes(season.season_number)
-    ? "Watched ✓"
-    : "Mark season watched"}
-</button>
+        if (!backendSeason) return null;
 
-        </div>
-      </div>
-    ))}
+        const watched = watchedSeasons.includes(backendSeason.id);
+
+        return (
+          <div
+            key={tmdbSeason.season_number}
+            className="border border-gray-700 rounded p-3 mb-3"
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">
+                Season {tmdbSeason.season_number}
+              </h4>
+
+              <button
+                onClick={async () => {
+                  await markSeasonWatched(backendSeason.id);
+                  setWatchedSeasons(prev => [...prev, backendSeason.id]);
+                }}
+                className={`text-sm px-3 py-1 rounded ${
+                  watched
+                    ? "bg-green-600"
+                    : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
+              >
+                {watched ? "Watched ✓" : "Mark season watched"}
+              </button>
+            </div>
+          </div>
+        );
+      })}
   </div>
 )}
+
 
 
           {/* Placeholder for Phase 2 */}
