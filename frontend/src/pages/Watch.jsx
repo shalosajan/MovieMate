@@ -4,11 +4,14 @@ import {
   getMovieDetails,
   getTVDetails,
 } from "../api/tmdbProxy";
+import { markMovieWatched, markSeasonWatched } from "../api/catalog";
 
 export default function Watch() {
   const { type, id } = useParams();
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [movieStatus, setMovieStatus] = useState("unwatched");
+  const [watchedSeasons, setWatchedSeasons] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -26,6 +29,12 @@ export default function Watch() {
     };
     load();
   }, [type, id]);
+
+  useEffect(() => {
+  if (type === "movie") {
+    setMovieStatus("unwatched"); // reset when navigating
+  }
+}, [type, id]);
 
   if (loading) {
     return (
@@ -68,6 +77,60 @@ export default function Watch() {
           <p className="text-gray-300 mb-6">
             {details.overview}
           </p>
+ {type === "movie" && (
+  <button
+    onClick={async () => {
+      await markMovieWatched(details.id);
+      setMovieStatus("completed");
+    }}
+    disabled={movieStatus === "completed"}
+    className={`mt-4 px-4 py-2 rounded ${
+      movieStatus === "completed"
+        ? "bg-green-600 cursor-default"
+        : "bg-indigo-600 hover:bg-indigo-700"
+    }`}
+  >
+    {movieStatus === "completed" ? "Watched ✓" : "Mark as watched"}
+  </button>
+)}
+
+
+{type === "tv" && (
+  <div className="mt-6">
+    <h3 className="text-lg font-semibold mb-3">Seasons</h3>
+
+    {details.seasons?.map((season) => (
+      <div
+        key={season.id}
+        className="border border-gray-700 rounded p-3 mb-3"
+      >
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium">
+            Season {season.season_number}
+          </h4>
+
+<button
+  onClick={async () => {
+    await markSeasonWatched(season.id);
+    setWatchedSeasons(prev => [...prev, season.season_number]);
+  }}
+  className={`text-sm px-3 py-1 rounded ${
+    watchedSeasons.includes(season.season_number)
+      ? "bg-green-600"
+      : "bg-indigo-600 hover:bg-indigo-700"
+  }`}
+>
+  {watchedSeasons.includes(season.season_number)
+    ? "Watched ✓"
+    : "Mark season watched"}
+</button>
+
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
 
           {/* Placeholder for Phase 2 */}
           <div className="border-t border-gray-700 pt-4">
