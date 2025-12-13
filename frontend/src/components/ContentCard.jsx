@@ -1,17 +1,32 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React from "react";
 
+export default function ContentCard({ item, onClick }) {
+  return (
+    <div
+      onClick={() => onClick?.(item)}
+      className="bg-gray-800 p-3 rounded shadow cursor-pointer hover:scale-105 transition"
+    >
+      {item.poster_path ? (
+        <img
+          src={item.poster_path}
+          alt={item.title || item.name}
+          className="w-full h-48 object-cover rounded"
+        />
+      ) : (
+        <div className="h-48 bg-gray-700 flex items-center justify-center">
+          No Image
+        </div>
+      )}
 
-export default function ContentCard({ item }){
-return (
-<div className="bg-white p-3 rounded shadow">
-{item.poster_path ? <img src={item.poster_path} alt={item.title} className="w-full h-48 object-cover rounded" /> : <div className="h-48 bg-gray-200 flex items-center justify-center">No Image</div>}
-<h3 className="mt-2 text-lg font-semibold">{item.title}</h3>
-<div className="text-sm text-gray-500">{item.type}</div>
-<div className="mt-2 flex justify-between items-center">
-<div className="text-sm">{item.status}</div>
-<Link to={`/content/${item.id}`} className="text-blue-600">Open</Link>
-</div>
-</div>
-)
+      <h3 className="mt-2 text-sm font-semibold">
+        {item.title || item.name}
+      </h3>
+
+      {item.type && (
+        <div className="text-xs text-gray-400">
+          {item.type}
+        </div>
+      )}
+    </div>
+  );
 }

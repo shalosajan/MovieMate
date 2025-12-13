@@ -1,3 +1,4 @@
+// Home.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
@@ -10,6 +11,8 @@ import {
   getTrendingTV,
   getNowPlayingMovies
 } from "../api/tmdbProxy";
+import DetailsModal from "../components/DetailsModal";
+
 
 export default function Home() {
   const [collection, setCollection] = useState([]);
@@ -18,6 +21,7 @@ export default function Home() {
   const [topRatedMovies, setTopRatedMovies] = useState([]);
   const [trendingTV, setTrendingTV] = useState([]);
   const [nowPlaying, setNowPlaying] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const [query, setQuery] = useState("");
 
@@ -25,13 +29,14 @@ export default function Home() {
   const isAuthenticated = !!localStorage.getItem("access_token");
 
   // 🔓 Public TMDB proxy data
-  useEffect(() => {
-    getTrendingMovies().then(d => setTrendingMovies(d.results));
-    getPopularMovies().then(d => setPopularMovies(d.results));
-    getTopRatedMovies().then(d => setTopRatedMovies(d.results));
-    getTrendingTV().then(d => setTrendingTV(d.results));
-    getNowPlayingMovies().then(d => setNowPlaying(d.results));
-  }, []);
+useEffect(() => {
+  getTrendingMovies().then(d => setTrendingMovies(d?.results || []));
+  getPopularMovies().then(d => setPopularMovies(d?.results || []));
+  getTopRatedMovies().then(d => setTopRatedMovies(d?.results || []));
+  getTrendingTV().then(d => setTrendingTV(d?.results || []));
+  getNowPlayingMovies().then(d => setNowPlaying(d?.results || []));
+}, []);
+
 
   // 🔐 User collection
   useEffect(() => {
@@ -66,14 +71,27 @@ export default function Home() {
       <Carousel
         title="🔥 Trending Movies"
         items={trendingMovies}
+        onItemClick={(item) => setSelectedItem(item)}
       />
-    <Carousel title="🎥 Popular Movies" items={popularMovies} />
+    <Carousel title="🎥 Popular Movies"
+     items={popularMovies}
+     onItemClick={(item) => setSelectedItem(item)}
+    />
 
-    <Carousel title="⭐ Top Rated Movies" items={topRatedMovies} />
+    <Carousel title="⭐ Top Rated Movies" 
+    items={topRatedMovies}
+    onItemClick={(item) => setSelectedItem(item)}
+    />
 
-    <Carousel title="📺 Trending TV Shows" items={trendingTV} />
+    <Carousel title="📺 Trending TV Shows" 
+    items={trendingTV}
+    onItemClick={(item) => setSelectedItem(item)}
+    />
 
-    <Carousel title="🆕 Latest Releases" items={nowPlaying} />
+    <Carousel title="🆕 Latest Releases"
+     items={nowPlaying}
+     onItemClick={(item) => setSelectedItem(item)}
+    />
 
       {/* PRIVATE */}
       {isAuthenticated && (
@@ -89,6 +107,12 @@ export default function Home() {
           </div>
         </>
       )}
+      <DetailsModal
+  item={selectedItem}
+  open={!!selectedItem}
+  onClose={() => setSelectedItem(null)}
+/>
+
     </div>
   );
 }
